@@ -11,7 +11,7 @@ import (
 	"github.com/jpodlasnisky/multithreading/internal/infra/database"
 	"github.com/jpodlasnisky/multithreading/internal/infra/webservers/api"
 	"github.com/jpodlasnisky/multithreading/internal/model"
-	utilsHttp "github.com/jpodlasnisky/multithreading/internal/utils"
+	utils "github.com/jpodlasnisky/multithreading/internal/utils"
 )
 
 type AddressHandle struct {
@@ -28,7 +28,7 @@ func NewAddressHandle(appConfig config.Config, viacepDB database.ViaCepInterface
 	}
 }
 
-func (h *AddressHandle) GetAddressHandle(res http.ResponseWriter, req *http.Request) {
+func (handle *AddressHandle) GetAddressHandle(res http.ResponseWriter, req *http.Request) {
 	cep := chi.URLParam(req, "cep")
 
 	var wg sync.WaitGroup
@@ -37,21 +37,21 @@ func (h *AddressHandle) GetAddressHandle(res http.ResponseWriter, req *http.Requ
 	channelViacep := make(chan interface{})
 	channelBrasilCep := make(chan interface{})
 
-	go api.GetAddressFromCEP(channelViacep, res, h.config.ViaCepHost+cep+"/json/", &wg, false)
-	go api.GetAddressFromCEP(channelBrasilCep, res, h.config.BrasilCepHost+cep, &wg, true)
+	go api.GetAddressFromCEP(channelViacep, res, handle.config.ViaCepHost+cep+"/json/", &wg, false)
+	go api.GetAddressFromCEP(channelBrasilCep, res, handle.config.BrasilCepHost+cep, &wg, true)
 
 	select {
 	case viaCepRes := <-channelViacep:
 
 		log.Println("viaCEPResponse:", viaCepRes)
-		h.viacepDB.Create(viaCepRes.(model.ViaCepRes))
-		utilsHttp.AddJsonBodyIntoRes(&viaCepRes, res)
+		handle.viacepDB.Create(viaCepRes.(model.ViaCepRes))
+		utils.AddJsonBodyIntoRes(&viaCepRes, res)
 
 	case brasilCepRes := <-channelBrasilCep:
 
 		log.Println("brasilCEPResponse:", brasilCepRes)
-		h.brasilcepDB.Create(brasilCepRes.(model.BrasilCepRes))
-		utilsHttp.AddJsonBodyIntoRes(&brasilCepRes, res)
+		handle.brasilcepDB.Create(brasilCepRes.(model.BrasilCepRes))
+		utils.AddJsonBodyIntoRes(&brasilCepRes, res)
 
 	case <-time.After(time.Second):
 
