@@ -6,5 +6,5 @@
 
 **Exemplo de Requisição:**
 ```
-GET http://localhost:8000/myaddress/91787000
+GET http://localhost:8000/myaddress/90010290
 ```
